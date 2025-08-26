@@ -140,7 +140,7 @@ set -euo pipefail
 
   # 777 확인
   is_dangerous_777() {
-    local m="$1" f="$2" seg who op perms
+    local m="$1" f="${2:-}" seg who op perms
     ## 숫자 모드 777 점검
     [[ "$m" =~ ^[-+=]?(0*|[1-7])777$ ]] && return 0
 
