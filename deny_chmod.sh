@@ -67,7 +67,6 @@ is_in_blocklist() {
 # 모드 및 파일 추출
 # -------------------------
 
-MODE=""; REF_MODE=0; FILES=(); REF_FILE=""; USE_R=0; E_CODE=0
 extract_mode_and_files() {
   local args=( "$@" ); new_args=()
 
@@ -102,7 +101,7 @@ extract_mode_and_files() {
                    REF_FILE="$1"
                    shift; continue ;;
       -R|--recursive) USE_R=1; shift; continue ;;
-      --help|--version) exec -a chmod /usr/bin/chmod "$1"; E_CODE=1; break ;;
+      --help|--version) exec -a chmod "$CHMOD_REAL" "$1"; E_CODE=1; break ;;
       *) shift; continue ;;
     esac
   done
@@ -143,7 +142,7 @@ deny_exec_risk_propagation() {
 
 # 777 확인
 is_dangerous_777() {
-  local m="$1" f="$2" seg who op perms
+  local m="$1" f="${2:-}" seg who op perms
   ## 숫자 모드 777 점검
   [[ "$m" =~ ^[-+=]?(0*|[1-7])777$ ]] && return 0
 
@@ -174,6 +173,8 @@ is_dangerous_777() {
 
 main() {
   local ORIG=( "$@" )
+  local CHMOD_REAL=${CHMOD_REAL:-/usr/libexec/chmod.org}
+  local MODE=""; REF_MODE=0; FILES=(); REF_FILE=""; USE_R=0; E_CODE=0
 
   extract_mode_and_files "${ORIG[@]}" || return $?
   [[ "$E_CODE" == 0 ]] || return 0
@@ -208,9 +209,9 @@ main() {
   fi
 
   if ! grep -wq -- '--preserve-root' <<< "${ORIG[@]}";then
-    exec -a chmod /usr/bin/chmod --preserve-root "${ORIG[@]}"
+    exec -a chmod "$CHMOD_REAL" --preserve-root "${ORIG[@]}"
   else
-    exec -a chmod /usr/bin/chmod "${ORIG[@]}"
+    exec -a chmod "$CHMOD_REAL" "${ORIG[@]}"
   fi
 }
 
