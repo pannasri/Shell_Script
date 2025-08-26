@@ -198,7 +198,7 @@ set -euo pipefail
   for f in "${FILES[@]}";do
     [[ "$f" == -* ]] && continue
 
-    canon_f="$(readlink -f -- "$f")"
+    canon_f="$(readlink -f -- "$f")" || die "chmod: cannot access '"$f"': No such file or directory"
     if is_in_blocklist "$canon_f";then
       die """$canon_f"" 경로는 변경이 불가능합니다."
       return $?
@@ -225,7 +225,7 @@ set -euo pipefail
     confirm_or_abort "위험 권한으로 명령 실행이 취소됩니다." || return $?
   fi
 
-  if (( REF_MODE == 1 )) && [[ -n ${REF_FILE:-} ]]; then
+  if (( REF_MODE == 1 )) && [[ -n ${REF_FILE:-} ]];then
     local ref_mode
     ref_mode=$(stat -c %a -- "$REF_FILE" 2>/dev/null || printf '')
     if [[ $ref_mode =~ ^[0-7]{3,4}$ ]] && is_dangerous_777 "$ref_mode"; then
