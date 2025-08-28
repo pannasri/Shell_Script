@@ -32,6 +32,17 @@ BLOCKED_PATHS=(
   "/data"
 )
 
+blocked_paths_append() {
+  local new_paths old_paths combined_paths
+  
+  mapfile -t new_paths  < <(df | awk 'NR > 1 { if(match($NF, /^(\/[^/]*)/, m)) {print m[1]} }' | sort -u)
+
+  old_paths=("${BLOCKED_PATHS[@]}")
+  combined_paths=("${old_paths[@]}" "${new_paths[@]}")
+
+  mapfile -t BLOCKED_PATHS < <(printf "%s\n" "${combined_paths[@]}" | sed '/^$/d' | sort -u)
+}
+
 
 # -------------------------
 # 반복 함수 설정
@@ -197,6 +208,8 @@ main() {
   [[ "$E_CODE" == 0 ]] || return 0
 
   (( ${#FILES[@]} > 0 )) || { die "chmod: missing operand for '대상을 찾을 수 없음'\nTry 'chmod --help' for more information."; return $?; }
+
+  blocked_paths_append
 
   local f canon_f
   for f in "${FILES[@]}";do
