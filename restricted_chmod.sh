@@ -203,6 +203,7 @@ main() {
     [[ "$f" == -* ]] && continue
     
     canon_f="$(readlink -f -- "$f")" || die "chmod: cannot access '""$f""': No such file or directory"
+    ls -d "$canon_f" &> /dev/null || die "chmod: cannot access '""$canon_f""': No such file or directory"
     if is_in_blocklist "$canon_f";then
       die "$canon_f 경로는 변경이 불가능합니다."
     fi
@@ -218,7 +219,8 @@ main() {
   if [[ "$USE_R" == 1 ]];then
 #    echo "-R/--recursive 를 재귀 옵션을 사용했습니다."
 #    echo "해당 옵션은 사용 시, 하위 경로 모두 권한이 변경됩니다."
-     warn_reply $'-R/--recursive 를 재귀 옵션을 사용했습니다.\n해당 옵션은 사용 시, 하위 경로 모두 권한이 변경됩니다.\n\n'
+     echo -e "재귀 옵션(\e[31;1m-R/--recursive\e[m)를 사용했습니다."
+     warn_reply $'해당 옵션은 사용 시, 하위 경로 모두 권한이 변경됩니다.\n\n'
 #    answer_check "-R/--recursive 옵션으로 명령 실행이 취소됩니다."
   fi
 
