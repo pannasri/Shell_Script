@@ -39,16 +39,21 @@ BLOCKED_PATHS=(
 
 die() { printf '\033[31;1m%b\033[m\n' "$*" >&2; exit 1; }
 
-answer_check() {  
-  local ans
-  while :;do
-    read -r -p "그래도 진행하시겠습니까?[y/n] " ans
-    case "$ans" in
-      y|Y) echo ""; return 0 ;;
-      n|N) die "$1" ;;
-      *) echo "다시 선택해주세요." ;;
-    esac
-  done
+#answer_check() {  
+#  local ans
+#  while :;do
+#    read -r -p "그래도 진행하시겠습니까?[y/n] " ans
+#    case "$ans" in
+#      y|Y) echo ""; return 0 ;;
+#      n|N) die "$1" ;;
+#      *) echo "다시 선택해주세요." ;;
+#    esac
+#  done
+#}
+
+warn_reply() {
+  local ans=$1
+  printf '\033[31;1m%b\033[m' "$ans" >&2;
 }
 
 
@@ -197,30 +202,33 @@ main() {
   for f in "${FILES[@]}";do
     [[ "$f" == -* ]] && continue
     
-    canon_f="$(readlink -f -- "$f")" || die "chmod: cannot access '"$f"': No such file or directory"
+    canon_f="$(readlink -f -- "$f")" || die "chmod: cannot access '""$f""': No such file or directory"
     if is_in_blocklist "$canon_f";then
       die "$canon_f 경로는 변경이 불가능합니다."
     fi
 
     if is_root_or_immediate_child "$canon_f";then
-      echo -e "지금 적용하려고 하시는 \033[31;1m""$canon_f""\033[m 경로는 / 경로 바로 하위 경로입니다."
-      echo "원하시는 경로가 맞는지 확인 부탁드립니다."
-      answer_check "해당 경로의 권한 변경을 취소합니다."
+      echo -e "지금 적용하려고 하시는 \033[31;1m""$canon_f""\033[m 경로는 \e[31;1m/ 경로 바로 하위 경로\e[m입니다."
+      warn_reply $'/ 하위 경로는 권한 변경에 있어서 주의가 필요합니다.\n\n'
+#      echo "원하시는 경로가 맞는지 확인 부탁드립니다."
+#      answer_check "해당 경로의 권한 변경을 취소합니다."
     fi
   done
 
   if [[ "$USE_R" == 1 ]];then
-    echo "-R/--recursive 를 재귀 옵션을 사용했습니다."
-    echo "해당 옵션은 사용 시, 하위 경로 모두 권한이 변경됩니다."
-    answer_check "-R/--recursive 옵션으로 명령 실행이 취소됩니다."
+#    echo "-R/--recursive 를 재귀 옵션을 사용했습니다."
+#    echo "해당 옵션은 사용 시, 하위 경로 모두 권한이 변경됩니다."
+     warn_reply $'-R/--recursive 를 재귀 옵션을 사용했습니다.\n해당 옵션은 사용 시, 하위 경로 모두 권한이 변경됩니다.\n\n'
+#    answer_check "-R/--recursive 옵션으로 명령 실행이 취소됩니다."
   fi
 
 
   if (( REF_MODE == 0 )) && [[ -n "${MODE:-}" ]] && is_dangerous_777 "$MODE" "$canon_f";then
     echo -e "\e[31;1m$MODE\e[m는 권한 비트가 777 입니다."
-    echo "777, rwx 권한은 보안 및 시스템 위험이 있으며,"
-    echo "특정 파일의 권한이 777, rwx 등을 이용하여 변경될 경우, 시스템 운영에 악영향을 끼칩니다."
-    answer_check "777, rwx 권한으로 명령 실행이 취소됩니다."
+#    echo "777, rwx 권한은 보안 및 시스템 위험이 있으며,"
+#    echo "특정 파일의 권한이 777, rwx 등을 이용하여 변경될 경우, 시스템 운영에 악영향을 끼칩니다."
+    warn_reply $'777, rwx 권한은 보안 및 시스템 위험이 있으며,\n특정 파일의 권한이 777, rwx 등을 이용하여 변경될 경우, 시스템 운영에 악영향을 끼칩니다.\n\n'
+#    answer_check "777, rwx 권한으로 명령 실행이 취소됩니다."
   fi
 
   if (( REF_MODE == 1 )) && [[ -n ${REF_FILE:-} ]];then
@@ -228,9 +236,10 @@ main() {
     ref_mode=$(stat -c %a -- "$REF_FILE" 2>/dev/null || printf '')
     if [[ $ref_mode =~ ^[0-7]{3,4}$ ]] && is_dangerous_777 "$ref_mode"; then
       echo -e "--reference 대상(\e[31;1m${REF_FILE}\e[m)의 권한(\e[31;1m${ref_mode}\e[m)이 위험합니다."
-      echo "777, rwx 권한은 보안 및 시스템 위험이 있으며,"
-      echo "특정 파일의 권한이 777, rwx 등을 이용하여 변경될 경우, 시스템 운영에 악영향을 끼칩니다."
-      answer_check "777, rwx 권한으로 명령 실행이 취소됩니다."
+#      echo "777, rwx 권한은 보안 및 시스템 위험이 있으며,"
+#      echo "특정 파일의 권한이 777, rwx 등을 이용하여 변경될 경우, 시스템 운영에 악영향을 끼칩니다."
+      warn_reply $'777, rwx 권한은 보안 및 시스템 위험이 있으며,\n특정 파일의 권한이 777, rwx 등을 이용하여 변경될 경우, 시스템 운영에 악영향을 끼칩니다.\n\n'
+#      answer_check "777, rwx 권한으로 명령 실행이 취소됩니다."
     fi
   fi
   
